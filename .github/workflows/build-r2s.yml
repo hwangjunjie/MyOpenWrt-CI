@@ -11,6 +11,7 @@ on:
       - '.github/workflows/build-r2s.yml'
       - '.seed'
       - 'patches/**'
+      - 'scripts/**'
 
 env:
   INSTALL_HELLOWORLD: true
