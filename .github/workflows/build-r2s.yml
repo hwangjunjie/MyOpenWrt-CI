@@ -107,6 +107,7 @@ jobs:
         cat configs/config_rk3328 | grep "TARGET" >> ../base_rk3328.seed
         cat ../app_config.seed >> ../base_rk3328.seed
         cat ../base_rk3328.seed > configs/config_rk3328
+        cat configs/config_rk3328
 
     - name: Add checkwan script
       run: |
