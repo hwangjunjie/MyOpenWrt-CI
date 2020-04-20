@@ -105,8 +105,8 @@ jobs:
         cd friendlywrt-rk3328
         . ../scripts/remove_unused_config.sh
         cat configs/config_rk3328 | grep "TARGET" >> ../base_rk3328.seed
+        cat ../app_config.seed >> ../base_rk3328.seed
         cat ../base_rk3328.seed > configs/config_rk3328
-        cat ../app_config.seed > configs/config_rk3328
 
     - name: Add checkwan script
       run: |
