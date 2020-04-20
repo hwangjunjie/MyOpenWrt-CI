@@ -9,7 +9,7 @@ on:
       - master
     paths:
       - '.github/workflows/build-r2s.yml'
-      - '.seed'
+      - '*.seed'
       - 'patchs/**'
       - 'scripts/**'
 
