@@ -228,12 +228,12 @@ jobs:
         echo "##[set-output name=date_today;]$commit_time"
 
     - name: Create Release
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          artifacts: R2S-JJJ-*-ROM.zip
-          artifactContentType: application/zip
-          body: Built at ${{ steps.assemble_artifact.outputs.date_today }}
-          name: R2S-JJJ-${{ steps.assemble_artifact.outputs.date_today }}
-          tag: ${{ steps.assemble_artifact.outputs.date_today }}
-          token: ${{ secrets.sec_token }}
+      uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        artifacts: R2S-JJJ-*-ROM.zip
+        artifactContentType: application/zip
+        body: Built at ${{ steps.assemble_artifact.outputs.date_today }}
+        name: R2S-JJJ-${{ steps.assemble_artifact.outputs.date_today }}
+        tag: ${{ steps.assemble_artifact.outputs.date_today }}
+        token: ${{ secrets.sec_token }}
