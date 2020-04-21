@@ -210,7 +210,7 @@ jobs:
       run: |
         cd friendlywrt-rk3328
         sed -i 's/set -eu/set -u/' scripts/mk-friendlywrt.sh
-        ./build.sh nanopi_r2s.mk
+        #./build.sh nanopi_r2s.mk
         echo "::set-output name=status::success"
    
     - name: Assemble Artifact
@@ -236,4 +236,4 @@ jobs:
         body: Built at ${{ steps.assemble_artifact.outputs.date_today }}
         name: R2S-JJJ-${{ steps.assemble_artifact.outputs.date_today }}
         tag: ${{ steps.assemble_artifact.outputs.date_today }}
-        token: ${{ secrets.sec_token }}
+        token: ${{ secrets.MY_CI_TOKEN }}
