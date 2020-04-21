@@ -212,29 +212,38 @@ jobs:
         sed -i 's/set -eu/set -u/' scripts/mk-friendlywrt.sh
         #./build.sh nanopi_r2s.mk
         echo "::set-output name=status::success"
-   
+          
     - name: Assemble Artifact
       id: assemble_artifact
       run: |
         rm -rf ./artifact/
         mkdir -p ./artifact/
-        #gzip friendlywrt-rk3328/out/*.img
         #mv friendlywrt-rk3328/out/*img* ./artifact/
-        #cp friendlywrt-rk3328/friendlywrt/.config ./artifact/config.seed
+        #cp friendlywrt-rk3328/friendlywrt/.config ./artifact/
         cp -r friendlywrt-rk3328/friendlywrt/ ./artifact/
-        cd artifact
-        commit_time=$(date --iso-8601=date --date "$(git show -s --format=%ci $GITHUB_SHA | cut -d \  -f -2)")
-        zip ../R2S-JJJ-$commit_time-ROM.zip *
-        release_tag="R2S_firmware-$(date +%Y-%m-%d)"
-        echo "##[set-output name=date_today;]$commit_time"
+        zip -r artifact.zip ./artifact/
+        release_tag="R2S-Minimal-$(date +%Y-%m-%d)"
+        echo "##[set-output name=release_tag;]$release_tag"
 
     - name: Create Release
-      uses: ncipollo/release-action@v1
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.MY_CI_TOKEN }}
       with:
-        allowUpdates: true
-        artifacts: R2S-JJJ-*-ROM.zip
-        artifactContentType: application/zip
-        body: Built at ${{ steps.assemble_artifact.outputs.date_today }}
-        name: R2S-JJJ-${{ steps.assemble_artifact.outputs.date_today }}
-        tag: ${{ steps.assemble_artifact.outputs.date_today }}
-        token: ${{ secrets.MY_CI_TOKEN }}
+        tag_name: ${{ steps.assemble_artifact.outputs.release_tag }}
+        release_name: 自动发布 ${{ steps.assemble_artifact.outputs.release_tag }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.MY_CI_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+        asset_path: ./artifact.zip
+        asset_name: ${{ steps.assemble_artifact.outputs.release_tag }}-ROM.zip
+        asset_content_type: application/zip
+
