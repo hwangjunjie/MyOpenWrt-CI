@@ -221,11 +221,10 @@ jobs:
         #gzip friendlywrt-rk3328/out/*.img
         #mv friendlywrt-rk3328/out/*img* ./artifact/
         #cp friendlywrt-rk3328/friendlywrt/.config ./artifact/config.seed
-        zip friendlywrt-rk3328/friendlywrt friend.zip
-        cp friend.zip ./artifact/
+        cp friendlywrt-rk3328/friendlywrt/ ./artifact/
         cd artifact
-        #zip ../R2S-JJJ-$commit_time-ROM.zip *
         commit_time=$(date --iso-8601=date --date "$(git show -s --format=%ci $GITHUB_SHA | cut -d \  -f -2)")
+        zip ../R2S-JJJ-$commit_time-ROM.zip *
         release_tag="R2S_firmware-$(date +%Y-%m-%d)"
         echo "##[set-output name=date_today;]$commit_time"
 
