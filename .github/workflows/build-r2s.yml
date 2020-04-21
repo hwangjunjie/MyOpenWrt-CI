@@ -14,10 +14,9 @@ on:
       - 'scripts/**'
 
 env:
-  INSTALL_HELLOWORLD: false
+  INSTALL_HELLOWORLD: true
   INSTALL_OPENCLASH: true
   INSTALL_PASSWALL: true
-  INSTALL_FILEBROWSER: true
   SSH_ACTIONS: false
   TZ: Asia/Shanghai
 
@@ -91,8 +90,8 @@ jobs:
         sed -i '/ipv6/,+3d' package/base-files/files/root/setup.sh
         
         # open hello world
-        git checkout upstream/master -- feeds.conf.default
-        sed -i '5s/#src-git/src-git/g' feeds.conf.default
+        #git checkout upstream/master -- feeds.conf.default
+        #sed -i '5s/#src-git/src-git/g' feeds.conf.default
 
         git apply ../../patchs/enable_autocore.diff
         sed -i '/exit/i\chown -R root:root /usr/share/netdata/web' package/lean/default-settings/files/zzz-default-settings
@@ -144,13 +143,13 @@ jobs:
         cd friendlywrt-rk3328/friendlywrt/package/lean
         git clone https://github.com/jerrykuku/lua-maxminddb.git
         git clone https://github.com/jerrykuku/luci-app-vssr.git
-        cd luci-app-vssr/root/etc/
-        echo 'china_ssr.txt
-        config/black.list
-        config/white.list
-        dnsmasq.oversea/oversea_list.conf
-        dnsmasq.ssr/ad.conf
-        dnsmasq.ssr/gfw_base.conf' | xargs rm
+        #cd luci-app-vssr/root/etc/
+        #echo 'china_ssr.txt
+        #config/black.list
+        #config/white.list
+        #dnsmasq.oversea/oversea_list.conf
+        #dnsmasq.ssr/ad.conf
+        #dnsmasq.ssr/gfw_base.conf' | xargs rm
 
     - name: Add OpenClash
       if: env.INSTALL_OPENCLASH == 'true'
@@ -191,16 +190,6 @@ jobs:
         mv nanopi-r2s/luci-app-r2sflasher friendlywrt-rk3328/friendlywrt/package
         rm -rf nanopi-r2s
 
-    - name: Install filebrowser
-      if: env.INSTALL_FILEBROWSER == 'true'
-      run: |
-        rm -rf openwrt
-        git clone -b openwrt-18.06 https://github.com/project-openwrt/openwrt.git --depth=1
-        mkdir -p friendlywrt-rk3328/friendlywrt/package/ctcgfw
-        cp -a openwrt/package/ctcgfw/filebrowser friendlywrt-rk3328/friendlywrt/package/ctcgfw/
-        cp -a openwrt/package/ctcgfw/luci-app-filebrowser friendlywrt-rk3328/friendlywrt/package/ctcgfw/
-        rm -rf openwrt
-
     - name: SSH connection to Actions
       uses: P3TERX/debugger-action@master
       if: env.SSH_ACTIONS == 'true' || contains(github.event.action, 'ssh')
@@ -210,40 +199,37 @@ jobs:
       run: |
         cd friendlywrt-rk3328
         sed -i 's/set -eu/set -u/' scripts/mk-friendlywrt.sh
-        #./build.sh nanopi_r2s.mk
-        echo "::set-output name=status::success"
+        ./build.sh nanopi_r2s.mk
           
     - name: Assemble Artifact
       id: assemble_artifact
       run: |
         rm -rf ./artifact/
         mkdir -p ./artifact/
-        #mv friendlywrt-rk3328/out/*img* ./artifact/
-        #cp friendlywrt-rk3328/friendlywrt/.config ./artifact/
-        cp -r friendlywrt-rk3328/friendlywrt/ ./artifact/
+        gzip friendlywrt-rk3328/out/*.img
+        mv friendlywrt-rk3328/out/*img* ./artifact/
+        cp friendlywrt-rk3328/friendlywrt/.config ./artifact/config.seed
         zip -r artifact.zip ./artifact/
         release_tag="R2S-Minimal-$(date +%Y-%m-%d)"
         echo "##[set-output name=release_tag;]$release_tag"
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.ActionsUpload }}
+    - name: Upload firmware directory
+      uses: actions/upload-artifact@master
       with:
-        tag_name: ${{ steps.assemble_artifact.outputs.release_tag }}
-        release_name: 自动发布 ${{ steps.assemble_artifact.outputs.release_tag }}
-        draft: false
-        prerelease: false
+        name: ${{ steps.assemble_artifact.outputs.release_tag }}
+        path: ./artifact/
 
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.ActionsUpload }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        asset_path: ./artifact.zip
-        asset_name: ${{ steps.assemble_artifact.outputs.release_tag }}-ROM.zip
-        asset_content_type: application/zip
+    - name: Upload firmware to cowtransfer
+      if: steps.organize.outputs.status == 'success' && env.UPLOAD_COWTRANSFER == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer cow --block 2621440 -s -p 99 -t 3 --hash --no-progress ${FIRMWARE} 2>&1 | tee cowtransfer.log
+        echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
+    
+    - name: Upload firmware to WeTransfer
+      if: steps.organize.outputs.status == 'success' && env.UPLOAD_WETRANSFER == 'true' && !cancelled()
+      run: |
+        curl -fsSL git.io/file-transfer | sh
+        ./transfer wet -s -p 16 --no-progress ${FIRMWARE} 2>&1 | tee wetransfer.log
+        echo "::warning file=wetransfer.com::$(cat wetransfer.log | grep https)"
 
