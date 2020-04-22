@@ -14,9 +14,9 @@ on:
       - 'scripts/**'
 
 env:
-  INSTALL_HELLOWORLD: true
+  INSTALL_HELLOWORLD: false
   INSTALL_OPENCLASH: true
-  INSTALL_PASSWALL: true
+  INSTALL_PASSWALL: false
   SSH_ACTIONS: false
   TZ: Asia/Shanghai
 
@@ -103,7 +103,6 @@ jobs:
     - name: Generate config
       run: |
         cd friendlywrt-rk3328
-        . ../scripts/remove_unused_config.sh
         cat configs/config_rk3328 | grep "TARGET" >> ../base_rk3328.seed
         cat ../app_config.seed >> ../base_rk3328.seed
         cat ../base_rk3328.seed > configs/config_rk3328
