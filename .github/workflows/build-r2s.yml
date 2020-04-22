@@ -14,7 +14,7 @@ on:
       - 'scripts/**'
 
 env:
-  INSTALL_HELLOWORLD: false
+  INSTALL_HELLOWORLD: true
   INSTALL_OPENCLASH: true
   INSTALL_PASSWALL: true
   SSH_ACTIONS: false
@@ -63,8 +63,7 @@ jobs:
         git apply RK3328-enable-1512mhz-opp.patch
 
         cd ../
-        git clone https://github.com/openwrt/openwrt
-        cd openwrt/
+        git clone https://github.com/openwrt/openwrt && cd openwrt/
         rm target/linux/generic/pending-5.4/403-mtd-hook-mtdsplit-to-Kbuild.patch
         rm target/linux/generic/hack-5.4/700-swconfig_switch_drivers.patch
         ./scripts/patch-kernel.sh ../kernel target/linux/generic/backport-5.4
@@ -85,13 +84,15 @@ jobs:
         git remote add upstream https://github.com/coolsnowwolf/lede && git fetch upstream
         git rebase adc1a9a3676b8d7be1b48b5aed185a94d8e42728^ --onto upstream/master -X theirs
         git revert --no-edit 8faac30089ce616940b3e96c4f4d900aeb6b9fcb
+        git status
 
         rm target/linux/rockchip-rk3328/patches-4.14/0001-net-thunderx-workaround-BGX-TX-Underflow-issue.patch
         sed -i '/ipv6/,+3d' package/base-files/files/root/setup.sh
         
-        # open hello world
+        # add ssr puls
         git checkout upstream/master -- feeds.conf.default
         sed -i '5s/#src-git/src-git/g' feeds.conf.default
+        cat feeds.conf.default
 
         git apply ../../patchs/enable_autocore.diff
         sed -i '/exit/i\chown -R root:root /usr/share/netdata/web' package/lean/default-settings/files/zzz-default-settings
@@ -143,13 +144,7 @@ jobs:
         cd friendlywrt-rk3328/friendlywrt/package/lean
         git clone https://github.com/jerrykuku/lua-maxminddb.git
         git clone https://github.com/jerrykuku/luci-app-vssr.git
-        #cd luci-app-vssr/root/etc/
-        #echo 'china_ssr.txt
-        #config/black.list
-        #config/white.list
-        #dnsmasq.oversea/oversea_list.conf
-        #dnsmasq.ssr/ad.conf
-        #dnsmasq.ssr/gfw_base.conf' | xargs rm
+        sed -i '/gfw_list.conf/a\\/etc\/dnsmasq.ssr\/gfw_base.conf\n\/etc\/dnsmasq.oversea\/oversea_list.conf\n\/etc\/china_ssr.txt' luci-app-vssr/Makefile
 
     - name: Add OpenClash
       if: env.INSTALL_OPENCLASH == 'true'
