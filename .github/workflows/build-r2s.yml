@@ -64,6 +64,7 @@ jobs:
         # Unlock CPU 1.5Ghz
         wget https://github.com/armbian/build/raw/master/patch/kernel/rockchip64-dev/RK3328-enable-1512mhz-opp.patch
         git apply RK3328-enable-1512mhz-opp.patch
+        rm RK3328-enable-1512mhz-opp.patch
 
         cd ../
         git clone https://github.com/openwrt/openwrt && cd openwrt/
@@ -87,7 +88,6 @@ jobs:
         git remote add upstream https://github.com/coolsnowwolf/lede && git fetch upstream
         git rebase adc1a9a3676b8d7be1b48b5aed185a94d8e42728^ --onto upstream/master -X theirs
         git revert --no-edit 8faac30089ce616940b3e96c4f4d900aeb6b9fcb
-        git status
 
         # lean patches
         rm target/linux/rockchip-rk3328/patches-4.14/0001-net-thunderx-workaround-BGX-TX-Underflow-issue.patch
@@ -100,7 +100,9 @@ jobs:
 
         # add ssr plus
         git checkout upstream/master -- feeds.conf.default
-        sed -i '5s/#src-git/src-git/g' feeds.conf.default
+        //sed -i '5s/#src-git/src-git/g' feeds.conf.default
+        echo 'src-git helloworld https://github.com/jerrykuku/lua-maxminddb' >> feeds.conf.default
+        echo 'src-git helloworld https://github.com/jerrykuku/luci-app-vssr' >> feeds.conf.default
         cat feeds.conf.default
 
     - name: Generate config
@@ -224,14 +226,14 @@ jobs:
         path: ${{ env.FIRMWARE }}
 
     - name: Upload firmware to cowtransfer
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_COWTRANSFER == 'true' && !cancelled()
+      if: env.UPLOAD_COWTRANSFER == 'true' && !cancelled()
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer cow --block 2621440 -s -p 99 -t 3 --hash --no-progress ${FIRMWARE} 2>&1 | tee cowtransfer.log
         echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
     
     - name: Upload firmware to WeTransfer
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_WETRANSFER == 'true' && !cancelled()
+      if: env.UPLOAD_WETRANSFER == 'true' && !cancelled()
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer wet -s -p 16 --no-progress ${FIRMWARE} 2>&1 | tee wetransfer.log
