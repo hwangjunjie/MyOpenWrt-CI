@@ -110,12 +110,6 @@ jobs:
         cat ../base_rk3328.seed > configs/config_rk3328
         cat configs/config_rk3328
 
-    - name: Update Feeds
-      run: |
-        cd friendlywrt-rk3328/friendlywrt
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a
-
     - name: Add checkwan script
       run: |
         cd friendlywrt-rk3328/friendlywrt
@@ -136,7 +130,7 @@ jobs:
     
     - name: Add SSR Plus
       run: |
-        cd friendlywrt-rk3328/friendlywrt/package
+        cd friendlywrt-rk3328/friendlywrt/package/lean
         git clone https://github.com/fw876/helloworld.git
 
     - name: Add Helloworld
