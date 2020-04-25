@@ -14,7 +14,6 @@ on:
       - 'scripts/**'
 
 env:
-  INSTALL_SSRP: false
   INSTALL_HELLOWORLD: false
   INSTALL_PASSWALL: false
   SSH_ACTIONS: false
@@ -68,8 +67,9 @@ jobs:
 
         cd ../
         git clone https://github.com/openwrt/openwrt && cd openwrt/
-        rm target/linux/generic/pending-5.4/403-mtd-hook-mtdsplit-to-Kbuild.patch
-        rm target/linux/generic/hack-5.4/700-swconfig_switch_drivers.patch
+        #rm target/linux/generic/pending-5.4/403-mtd-hook-mtdsplit-to-Kbuild.patch
+        #rm target/linux/generic/hack-5.4/700-swconfig_switch_drivers.patch
+        cp -a ./target/linux/generic/files/* ../kernel/
         ./scripts/patch-kernel.sh ../kernel target/linux/generic/backport-5.4
         ./scripts/patch-kernel.sh ../kernel target/linux/generic/pending-5.4
         ./scripts/patch-kernel.sh ../kernel target/linux/generic/hack-5.4
@@ -79,6 +79,7 @@ jobs:
         grep -i '_NETFILTER_\|FLOW' ../.config.override > .config.override
         ./merge_config.sh -m .config.override kernel/arch/arm64/configs/nanopi-r2_linux_defconfig
         mv .config kernel/arch/arm64/configs/nanopi-r2_linux_defconfig
+
         sed -i -r 's/# (CONFIG_.*_ERRATUM_.*?) is.*/\1=y/g' kernel/arch/arm64/configs/nanopi-r2_linux_defconfig
 
     - name: Merge lean's openwrt
@@ -87,23 +88,20 @@ jobs:
         git config --local user.email "action@github.com" && git config --local user.name "GitHub Action"
         git remote add upstream https://github.com/coolsnowwolf/lede && git fetch upstream
         git rebase adc1a9a3676b8d7be1b48b5aed185a94d8e42728^ --onto upstream/master -X theirs
-        git revert --no-edit 8faac30089ce616940b3e96c4f4d900aeb6b9fcb
+        #git revert --no-edit 8faac30089ce616940b3e96c4f4d900aeb6b9fcb
 
         # lean patches
         rm target/linux/rockchip-rk3328/patches-4.14/0001-net-thunderx-workaround-BGX-TX-Underflow-issue.patch
-        sed -i '/ipv6/,+3d' package/base-files/files/root/setup.sh
-        
-        git apply ../../patches/enable_autocore.diff
+ 
+        git apply ../../patches/002-lean-enable_autocore.diff
         sed -i '/exit/i\chown -R root:root /usr/share/netdata/web' package/lean/default-settings/files/zzz-default-settings
         sed -i 's/option fullcone\t1/option fullcone\t0/' package/network/config/firewall/files/firewall.config
         sed -i '/8.8.8.8/d' package/base-files/files/root/setup.sh
+        sed -i '/ipv6/,+3d' package/base-files/files/root/setup.sh
 
         # add ssr plus
         git checkout upstream/master -- feeds.conf.default
         sed -i '5s/#src-git/src-git/g' feeds.conf.default
-        #echo 'src-git helloworld https://github.com/jerrykuku/lua-maxminddb' >> feeds.conf.default
-        #echo 'src-git helloworld https://github.com/jerrykuku/luci-app-vssr' >> feeds.conf.default
-        cat feeds.conf.default
 
     - name: Generate config
       run: |
@@ -130,12 +128,6 @@ jobs:
         rm -rf luci-theme-argon
         git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git
         sed -i '/uci commit luci/i\uci set luci.main.mediaurlbase="/luci-static/argon"' default-settings/files/zzz-default-settings
-    
-    - name: Add SSR Plus
-      if: env.INSTALL_SSRP == 'true'
-      run: |
-        cd friendlywrt-rk3328/friendlywrt/package/lean
-        git clone https://github.com/fw876/helloworld.git
 
     - name: Add Helloworld
       if: env.INSTALL_HELLOWORLD == 'true'
@@ -217,6 +209,7 @@ jobs:
         cd ./artifact/
         release_tag="R2S-firmware-$(date +%Y-%m-%d)"
         echo "::set-env name=FIRMWARE::$PWD"
+        echo "::set-output name=status::success"
         echo "##[set-output name=release_tag;]$release_tag"
 
     - name: Upload firmware directory
@@ -226,14 +219,14 @@ jobs:
         path: ${{ env.FIRMWARE }}
 
     - name: Upload firmware to cowtransfer
-      if: env.UPLOAD_COWTRANSFER == 'true' && !cancelled()
+      if: steps.assemble_artifact.outputs.status == 'success' && env.UPLOAD_COWTRANSFER == 'true' && !cancelled()
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer cow --block 2621440 -s -p 99 -t 3 --hash --no-progress ${FIRMWARE} 2>&1 | tee cowtransfer.log
         echo "::warning file=cowtransfer.com::$(cat cowtransfer.log | grep https)"
     
     - name: Upload firmware to WeTransfer
-      if: env.UPLOAD_WETRANSFER == 'true' && !cancelled()
+      if: steps.assemble_artifact.outputs.status == 'success' && env.UPLOAD_WETRANSFER == 'true' && !cancelled()
       run: |
         curl -fsSL git.io/file-transfer | sh
         ./transfer wet -s -p 16 --no-progress ${FIRMWARE} 2>&1 | tee wetransfer.log
