@@ -14,7 +14,7 @@ on:
       - 'scripts/**'
 
 env:
-  INSTALL_HELLOWORLD: false
+  INSTALL_HELLOWORLD: true
   INSTALL_PASSWALL: false
   SSH_ACTIONS: false
   UPLOAD_COWTRANSFER: true
@@ -135,7 +135,7 @@ jobs:
         cd friendlywrt-rk3328/friendlywrt/package/lean
         git clone https://github.com/jerrykuku/lua-maxminddb.git
         git clone https://github.com/jerrykuku/luci-app-vssr.git
-        sed -i '/gfw_list.conf/a\\/etc\/dnsmasq.ssr\/gfw_base.conf\n\/etc\/dnsmasq.oversea\/oversea_list.conf\n\/etc\/china_ssr.txt' luci-app-vssr/Makefile
+        #sed -i '/gfw_list.conf/a\\/etc\/dnsmasq.ssr\/gfw_base.conf\n\/etc\/dnsmasq.oversea\/oversea_list.conf\n\/etc\/china_ssr.txt' luci-app-vssr/Makefile
 
     - name: Add OpenClash
       run: |
