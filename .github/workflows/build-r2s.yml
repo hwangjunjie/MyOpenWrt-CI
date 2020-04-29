@@ -135,6 +135,13 @@ jobs:
         cd friendlywrt-rk3328/friendlywrt/package/lean
         git clone https://github.com/jerrykuku/lua-maxminddb.git
         git clone https://github.com/jerrykuku/luci-app-vssr.git
+
+        cd luci-app-vssr/root/etc/
+        echo 'china_ssr.txt
+        dnsmasq.oversea/oversea_list.conf
+        dnsmasq.ssr/gfw_list.conf
+        dnsmasq.ssr/gfw_base.conf' | xargs rm
+        
         #sed -i '/gfw_list.conf/a\\/etc\/dnsmasq.ssr\/gfw_base.conf\n\/etc\/dnsmasq.oversea\/oversea_list.conf\n\/etc\/china_ssr.txt' luci-app-vssr/Makefile
 
     - name: Add OpenClash
